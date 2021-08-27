@@ -16,9 +16,9 @@ class ViewController: UIViewController {
     let tableView: UITableView = {
         let tableView = UITableView()
         tableView.register(CustomCell.self, forCellReuseIdentifier: CustomCell.reuseIdentifier)
-        tableView.separatorColor = .none
+        tableView.separatorColor = .clear
         tableView.sectionHeaderHeight = 50
-        tableView.estimatedRowHeight = 44
+        tableView.estimatedRowHeight = UITableView.automaticDimension
         tableView.rowHeight = UITableView.automaticDimension
         
         return tableView
@@ -27,7 +27,6 @@ class ViewController: UIViewController {
     let footerView: UIStackView = {
         let saveButton: UIButton = {
             let button = UIButton()
-//            button.translatesAutoresizingMaskIntoConstraints = false
             button.setTitle("Save Changes", for: .normal)
             button.setTitleColor(.systemOrange, for: .normal)
             button.addTarget(self, action: #selector(checkCompletion), for: .touchUpInside)
@@ -35,7 +34,6 @@ class ViewController: UIViewController {
         }()
         let submitButton: UIButton = {
             let button = UIButton()
-//            button.translatesAutoresizingMaskIntoConstraints = false
             button.setTitle("Final Submit", for: .normal)
             button.setTitleColor(.systemOrange, for: .normal)
             return button
@@ -96,9 +94,25 @@ class ViewController: UIViewController {
         tableView.rightAnchor.constraint(equalTo: view.safeAreaLayoutGuide.rightAnchor).isActive = true
     }
     
+    func getCurrentDate() -> String {
+        let date = Date()
+        let dateFormatter = DateFormatter()
+        dateFormatter.dateFormat = "MM/dd/yy"
+        
+        return dateFormatter.string(from: date)
+    }
+    
     //check if list is complete
     @objc func checkCompletion() {
         listComplete = true
+        for cell in tableView.visibleCells as! [CustomCell] {
+            if cell.commentFieldHeightAnchor.constant > 0 {
+                cell.commentFieldHeightAnchor.constant = 0
+                cell.commentLabelHeightAnchor.constant = 34
+                cell.button.isSelected = false
+                cell.commentLabel.text = "\(user) on \(getCurrentDate()): \(cell.commentTextField.text ?? "")"
+            }
+        }
         tableView.reloadData()
     }
 
@@ -116,11 +130,18 @@ extension ViewController: UITableViewDelegate, UITableViewDataSource {
         
         cell.configureCell(label: areasOfObservations[indexPath.row])
         cell.backgroundColor = (indexPath.row % 2 == 0) ? .systemBackground : .systemGray3
-        cell.button.addAction(UIAction(handler: { UIAction in
-            tableView.reloadData()
-        }), for: .touchUpInside)
+        cell.textLabel?.numberOfLines = 0
+        cell.updateCell = { () in
+            cell.layoutIfNeeded()
+            tableView.beginUpdates()
+            tableView.endUpdates()
+        }
         
         return cell
+    }
+    
+    func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
+        return UITableView.automaticDimension
     }
     
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
